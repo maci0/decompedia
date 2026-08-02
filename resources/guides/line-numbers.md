@@ -1,14 +1,14 @@
 ---
-title: Adding line numbers to target assembly
+title: Adding line numbers to the target assembly
 description: 
 published: true
-date: 2026-08-02T12:39:44.535Z
+date: 2026-08-02T12:40:14.148Z
 tags: 
 editor: markdown
 dateCreated: 2026-08-02T12:39:44.535Z
 ---
 
-# Adding line numbers to target assembly
+# Adding line numbers to the target assembly
 
 Debug information for games can contain data on what assembly corresponds to which line in the original source code. It is possible to annotate the target assembly with this.
 
