@@ -2,7 +2,7 @@
 title: Adding line numbers to the target assembly
 description: 
 published: true
-date: 2026-08-02T12:40:14.148Z
+date: 2026-08-02T12:41:33.047Z
 tags: 
 editor: markdown
 dateCreated: 2026-08-02T12:39:44.535Z
