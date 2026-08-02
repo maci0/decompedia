@@ -2,7 +2,7 @@
 title: Adding line numbers to the target assembly
 description: 
 published: true
-date: 2026-08-02T12:41:33.047Z
+date: 2026-08-02T12:57:37.973Z
 tags: 
 editor: markdown
 dateCreated: 2026-08-02T12:39:44.535Z
@@ -28,7 +28,7 @@ In this case, `<file_record>` would be 1.
 
 ### How to use
 
-Add the .loc directive before the assembly that corresponds to the line number. It'll match all of the assembly between that and the next directive.
+Add the .loc directive before the assembly that corresponds to the line number. It'll match all of the assembly between that and the next .loc directive.
 
 ### Example
 
@@ -53,7 +53,11 @@ Another option is to use the STABS format.
 
 ### How to use
 
-Place a label with the name of your choice before the assembly that corresponds to the line number. Then place a .stabn directive that refers to it somewhere before it. It'll match all of the assembly between that label and the next one.
+To use STABS, you'll need to place a .stabs directive at the start that looks like this:
+
+`.stabs    "file.C",100,0,4,.Ltext0`
+
+Next, to define the line numbers, place a label with the name of your choice before the assembly that corresponds to the line number. Then place a .stabn directive that refers to it somewhere before it. It'll match all of the assembly between that label and the next label that defines the start of a line.
 
 ### Example
 
