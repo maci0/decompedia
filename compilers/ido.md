@@ -2,7 +2,7 @@
 title: IDO
 description: 
 published: true
-date: 2026-08-15T07:26:59.222Z
+date: 2026-08-15T07:27:36.639Z
 tags: 
 editor: markdown
 dateCreated: 2024-11-25T18:43:22.157Z
@@ -38,7 +38,8 @@ The following is a list of known projects that use this compiler:
 * Banjo-Kazooie
 * Banjo-Tooie
 * Chameleon Twist
-* Chameleon Twist 2
+* Chameleon Twist 2, mostly IDO 7.1
+* Conker's Bad Fur Day
 * Diddy Kong Racing
 * Dinosaur Planet
 * Donkey Kong 64
