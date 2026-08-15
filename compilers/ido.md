@@ -2,7 +2,7 @@
 title: IDO
 description: 
 published: true
-date: 2026-08-15T07:26:00.926Z
+date: 2026-08-15T07:26:32.286Z
 tags: 
 editor: markdown
 dateCreated: 2024-11-25T18:43:22.157Z
@@ -44,6 +44,7 @@ The following is a list of known projects that use this compiler:
 * Doraemon 1
 * F-Zero X, mostly IDO 7.1
 * IDO (IDO Decomp)
+* Jet Force Gemini
 * libultra
 * Mario Artist: Paint Studio (64DD), mostly IDO 7.1
 * Mischief Makers
