@@ -2,7 +2,7 @@
 title: IDO
 description: 
 published: true
-date: 2026-08-15T07:21:07.889Z
+date: 2026-08-15T07:22:56.005Z
 tags: 
 editor: markdown
 dateCreated: 2024-11-25T18:43:22.157Z
@@ -43,7 +43,8 @@ The following is a list of known projects that use this compiler:
 * libultra
 * Mario Artist: Paint Studio (64DD), mostly IDO 7.1
 * Mischief Makers
-* Pokémon Snap
+* Pokémon Snap, mostly IDO 7.1
+* Pokémon Stadium 1 & 2, mostly IDO 7.1
 * Quest 64
 * Space Station Silicon Valley
 * Super Mario 64
