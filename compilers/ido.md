@@ -2,7 +2,7 @@
 title: IDO
 description: 
 published: true
-date: 2026-08-15T07:26:32.286Z
+date: 2026-08-15T07:26:59.222Z
 tags: 
 editor: markdown
 dateCreated: 2024-11-25T18:43:22.157Z
@@ -33,6 +33,7 @@ The matching decompilation project can be found [here](https://github.com/decomp
 
 The following is a list of known projects that use this compiler:
 
+* AeroGauge
 * Animal Forest, mostly IDO 7.1
 * Banjo-Kazooie
 * Banjo-Tooie
