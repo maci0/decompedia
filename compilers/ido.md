@@ -2,7 +2,7 @@
 title: IDO
 description: 
 published: true
-date: 2026-08-15T07:19:05.084Z
+date: 2026-08-15T07:21:07.889Z
 tags: 
 editor: markdown
 dateCreated: 2024-11-25T18:43:22.157Z
@@ -41,7 +41,7 @@ The following is a list of known projects that use this compiler:
 * Dinosaur Planet
 * IDO (IDO Decomp)
 * libultra
-* Mario Artist: Paint Studio (64DD)
+* Mario Artist: Paint Studio (64DD), mostly IDO 7.1
 * Mischief Makers
 * Pokémon Snap
 * Quest 64
