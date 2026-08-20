@@ -2,7 +2,7 @@
 title: IDO
 description: 
 published: true
-date: 2026-08-15T07:27:36.639Z
+date: 2026-08-20T17:10:23.891Z
 tags: 
 editor: markdown
 dateCreated: 2024-11-25T18:43:22.157Z
@@ -53,6 +53,7 @@ The following is a list of known projects that use this compiler:
 * Pokémon Snap, mostly IDO 7.1
 * Pokémon Stadium 1 & 2, mostly IDO 7.1
 * Quest 64
+* Snowboard Kids, mostly IDO 5.3
 * Space Station Silicon Valley
 * Super Mario 64
 * The Legend of Zelda: Ocarina of Time, mostly IDO 7.1
