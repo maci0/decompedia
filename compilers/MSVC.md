@@ -10,7 +10,7 @@ dateCreated: 2026-08-20T13:42:59.000Z
 
 # MSVC
 
-MSVC (Microsoft Visual C++, also released as "Microsoft C") is Microsoft's C/C++ compiler for Windows. The full command-line line from **VC 1.0 (1992)** through **VC 11.0 (Visual Studio 2012)** is preserved and usable for matching decompilation of Windows 3.x / 9x / NT-era software. Unlike the console compilers on this site, MSVC has no native Linux build, so it is run through an emulation layer: [wine](/tools/wibo) (or [wibo](/tools/wibo)) for the 32-bit line and DOSBox for the 16-bit line.
+MSVC (Microsoft Visual C++, also released as "Microsoft C") is Microsoft's C/C++ compiler for Windows. The full command-line line from **VC 1.0 (1992)** through **VC 11.0 (Visual Studio 2012)** is preserved and usable for matching decompilation of Windows 3.x / 9x / NT-era software. Unlike the console compilers on this site, MSVC has no native Linux build, so it is run through an emulation layer: wine (or [wibo](/tools/wibo)) for the 32-bit line and DOSBox for the 16-bit line.
 
 ## Versions
 
