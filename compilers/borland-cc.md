@@ -10,7 +10,7 @@ dateCreated: 2026-08-20T13:42:59.000Z
 
 # Borland C/C++
 
-Borland's C/C++ compilers span the DOS and Windows eras, and two distinct lines are relevant to matching decompilation today: the **Turbo C / Turbo C++** line (16-bit DOS compilers, 1987–1992) and **Borland C++ 5.5** (1999, the free 32-bit Windows command-line tools). Both are proprietary and run today through emulation — DOSBox for the 16-bit line, [wine](/tools/wibo) (or [wibo](/tools/wibo)) for 32-bit.
+Borland's C/C++ compilers span the DOS and Windows eras, and two distinct lines are relevant to matching decompilation today: the **Turbo C / Turbo C++** line (16-bit DOS compilers, 1987–1992) and **Borland C++ 5.5** (1999, the free 32-bit Windows command-line tools). Both are proprietary and run today through emulation — DOSBox for the 16-bit line, wine (or [wibo](/tools/wibo)) for 32-bit.
 
 ## Versions
 
