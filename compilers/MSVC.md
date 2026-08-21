@@ -61,7 +61,7 @@ MSVC binaries are the most reliably fingerprintable Windows binaries, and multip
 - **Linker version** — VC 2.0–4.2 linkers write no Rich header, so the optional-header linker version alone names the version: 2.50 → VC 2.0, 3.0 → 4.0, 3.10 → 4.1, 4.20 → 4.2 (a bare 2.x is ambiguous with MinGW).
 - **CRT imports** — the `msvcpX.dll` / `msvcrX.dll` import (msvcp60/70/71/80/90/100) is a secondary binder.
 - **PDB** — a sibling `.pdb` carries an `S_COMPILE3` record with the compiler version and, for MSVC, the exact compiler flags.
-- **Codegen fingerprints** — even without headers, code shape identifies era, optimization and (roughly) version: `/O2` wrapper calls load-first (`mov eax,[esp+4]; push eax; add esp,N`) vs `/O1` push-[mem] (`push dword [esp+4]; pop ecx`); pre-6.0 compilers hoist a small loop-invariant constant into a callee-saved register and store via it (`mov ebx,imm32; mov [mem],ebx`) where VC 6.0 emits `mov [mem],imm32` directly; int3 alignment padding vs GNU nops.  The full per-version matrix below is verified by compiling one probe source through every preserved `CL.EXE` at `/O1` and `/O2` and disassembling the objects.
+- **Codegen fingerprints** — even without headers, code shape identifies era, optimization and (roughly) version: `/O2` wrapper calls load-first (`mov eax,[esp+4]; push eax; add esp,N`) vs `/O1` push-[mem] (`push dword [esp+4]; pop ecx`); pre-6.0 compilers hoist a small loop-invariant constant into a callee-saved register and store via it (`mov ebx,imm32; mov [mem],ebx`) where VC 6.0 emits `mov [mem],imm32` directly; int3 alignment padding vs GNU nops.  The full per-version matrix below is verified by compiling two probe sources through every preserved `CL.EXE` at `/O1` and `/O2` (plus every VC 6.0 SP at `/O2`) and disassembling the objects — probe #1 covers division, loops, FP math, char ops, stack frames, switches; probe #2 adds 64-bit arithmetic, FP constants (1.0/2.0/0.5), min/max/clamp, division by 5/9/12/100/1000, fixed-size memcpy/memset, rotates and sparse switches.
 
 ### Codegen behavior by version
 
@@ -69,17 +69,28 @@ MSVC binaries are the most reliably fingerprintable Windows binaries, and multip
 |---|---|---|---|---|---|---|---|---|---|---|
 | Magic-number division | — | — | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | `lea esp,[esp]` loop-alignment nops | — | — | — | — | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `rol` for rotates (`x<<n \| x>>(32-n)`) | — | — | — | — | — | — | ✓ | ✓ | ✓ | ✓ |
+| Memory-operand `imul [esp+4]` in div magic | — | — | — | — | — | — | — | — | ✓ | ✓ |
+| `cmov` for min/max/clamp | — | — | — | — | — | — | — | — | — | ✓ |
 | SSE2 FPU by default | — | — | — | — | — | — | — | — | — | ✓ |
 | rep movs/stos inlining | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | /GS security cookie (default) | — | — | — | — | — | — | ✓ | ✓ | ✓ | ✓ |
 
-- **Integer division** — VC 2.0 and 4.x emit real `div`/`idiv` (`mov ecx,3; xor edx,edx; div ecx`).  VC 5.0+ replace constants with magic immediates: `x/3u` → `mov eax,0xAAAAAAAB; mul [esp+4]`, `x/10u` → `0xCCCCCCCD`, `x/100u` → `0x51EB851F`, signed `x/7` → `0x92492493`, `x/10` → `0x66666667`.  VC 5.0/6.0 take the product's high half directly (`mov eax,edx`); VC 7.0+ emit the post-shift (`shr edx,N`) first.
+- **Integer division** — VC 2.0 and 4.x emit real `div`/`idiv` (`mov ecx,3; xor edx,edx; div ecx`, with `sub edx,edx` for the zero-extend).  VC 5.0+ replace constants with magic immediates: `x/3u` → `mov eax,0xAAAAAAAB; mul [esp+4]`, `x/10u` → `0xCCCCCCCD`, `x/100u` → `0x51EB851F`, signed `x/7` → `0x92492493`, `x/10` → `0x66666667`.  The **tail is the version discriminator** (verified across 8 unsigned and 5 signed divisors):
+  - **VC 5.0/6.0 unsigned:** `mov eax,edx; shr eax,N` (`8b c2 c1 e8 N`) — the shift applies to the *low* register.
+  - **VC 7.0+ unsigned:** `shr edx,N; mov eax,edx` (`c1 ea N 8b c2`) — shift first, then move.
+  - **VC 5.0/6.0 signed:** the sign fix round-trips through ECX — `mov eax,edx; sar eax,N; mov ecx,eax; shr ecx,31; add eax,ecx` (`8b c8 c1 e9 1f 03 c1`).
+  - **VC 7.0+ signed:** `sar edx,N; mov eax,edx; shr eax,31; add eax,edx` (`c1 fa N 8b c2 c1 e8 1f 03 c2`).
+  - **VC 10.0+ signed:** the divisor is no longer pre-loaded — `imul dword ptr [esp+4]` (`f7 6c 24 04`) multiplies the stack operand directly (VC 5.0–9.0 do `mov ecx,[esp+4]; imul ecx`).
 - **Padding** — VC 2.0–6.0 pad with `90`, the 3-byte `8d 74 26 00` (`lea esi,[esi]`) and 7-byte `8d a4 24 00 00 00 00` nops; VC 7.0+ additionally emit `8d 64 24 00` (`lea esp,[esp]`) *inside* function bodies to align loop heads — a clean "VC 7.0+ codegen" marker even when the linker/CRT era says 6.0 (same independence as the constant-caching signal above).
+- **FP constant encoding** — the way `a+1.0` compiles splits the line four ways: VC 2.0/4.x use `fld1` (`d9 e8`) + `fadd [esp+4]`; **VC 5.0 emits `fsub qword [−1.0]` (`dc 25`) with the *negated* constant in `.rdata`** (its table holds −1.0/−3.0 — a 5.0-only quirk); VC 6.0–10.0 use `fadd qword [+1.0]` (`dc 05`); VC 11.0 computes in SSE2 (`movsd xmm0,[esp+4]; addsd xmm0,[const]; movsd [esp+4],xmm0`) and hands the result to x87 for the return.
 - **FPU** — VC 2.0–10.0 use x87 exclusively (`fld qword [esp+4]` = `dd 44 24 04`); FP constants load from `.rdata` via `fmul dword ptr [const]`, not `fld1`/`fldz`.  VC 11.0 (VS2012) defaults x86 to SSE2 (`addsd`/`mulsd`/`divsd` = `f2 0f 58/59/5e`).
-- **String ops** — all versions inline memset/memcpy-shaped loops as `rep stosd` (`f3 ab`) / `rep movsd` (`f3 a5`); GCC and Borland bcc32 do not rep-stos the same source.
+- **String ops** — all versions inline memset/memcpy-shaped loops as `rep stosd` (`f3 ab`) / `rep movsd` (`f3 a5`); GCC and Borland bcc32 do not rep-stos the same source.  Fixed-size copies: 2–16 B inline as mov pairs, 32–64 B as `rep movsd` — identical in every version (not a discriminator).
 - **Stack probes** — frames > 4 KB: `mov eax,<size>; call __chkstk` (32-bit) / `mov ax,<size>; call __aNchkstk` (16-bit); MinGW instead calls `___chkstk_ms`.
 - **Frame pointer** — omitted at `/O1`/`/O2` (args at `[esp+4]`); `push ebp; mov ebp,esp` (`55 8b ec`) means `/Od` or `/Oy-`.
 - **/GS** — VC 8.0+ default-instruments buffer functions with `__security_cookie` / `__security_check_cookie` (the symbols survive in unstripped binaries and objects).
+- **min/max/clamp** — `imax`/`imin`/`clamp` compile to branches in VC 2.0–10.0 and to `cmovg`/`cmovl` (`0f 4f`/`0f 4c`) in VC 11.0 — the only MSVC version that emits conditional moves for them.  `iabs` (`x<0?-x:x`) uses `test; jns; neg` in VC 5.0–9.0 and `cdq; xor; sub` (`99 33 c2 2b c2`) in VC 10.0+.
+- **Proven non-discriminators** — the VC 6.0 SP levels (SP1–SP6) are codegen-identical for every tested function: the SPs differ only in the Rich-header C1 build (8168/8447/8966/9782), not in code shape.  VC 4.0/4.1/4.2 are byte-identical to each other and to VC 2.0.  64-bit mul/div/shift stay helper calls (`__allmul`/`__alldiv`/`__allshl`) in every version — never inlined.
 - **16-bit line** — VC 1.x always frames with `push bp; mov bp,sp`, ends with `leave` (`c9`), divides via `mov bx,N; div bx`, and intersperses `fwait` (`9b`) in FPU code.
 - **Detect It Easy** — `diec` carries per-version MSVC signatures and is the quickest first pass.
 
