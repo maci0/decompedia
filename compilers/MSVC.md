@@ -61,7 +61,26 @@ MSVC binaries are the most reliably fingerprintable Windows binaries, and multip
 - **Linker version** — VC 2.0–4.2 linkers write no Rich header, so the optional-header linker version alone names the version: 2.50 → VC 2.0, 3.0 → 4.0, 3.10 → 4.1, 4.20 → 4.2 (a bare 2.x is ambiguous with MinGW).
 - **CRT imports** — the `msvcpX.dll` / `msvcrX.dll` import (msvcp60/70/71/80/90/100) is a secondary binder.
 - **PDB** — a sibling `.pdb` carries an `S_COMPILE3` record with the compiler version and, for MSVC, the exact compiler flags.
-- **Codegen fingerprints** — even without headers, code shape identifies era and optimization: `/O2` wrapper calls load-first (`mov eax,[esp+4]; push eax; add esp,N`) vs `/O1` push-[mem] (`push dword [esp+4]; pop ecx`); pre-6.0 compilers hoist a small loop-invariant constant into a callee-saved register and store via it (`mov ebx,imm32; mov [mem],ebx`) where VC 6.0 emits `mov [mem],imm32` directly; int3 alignment padding vs GNU nops.
+- **Codegen fingerprints** — even without headers, code shape identifies era, optimization and (roughly) version: `/O2` wrapper calls load-first (`mov eax,[esp+4]; push eax; add esp,N`) vs `/O1` push-[mem] (`push dword [esp+4]; pop ecx`); pre-6.0 compilers hoist a small loop-invariant constant into a callee-saved register and store via it (`mov ebx,imm32; mov [mem],ebx`) where VC 6.0 emits `mov [mem],imm32` directly; int3 alignment padding vs GNU nops.  The full per-version matrix below is verified by compiling one probe source through every preserved `CL.EXE` at `/O1` and `/O2` and disassembling the objects.
+
+### Codegen behavior by version
+
+| Behavior | VC 2.0 | 4.x | 5.0 | 6.0 | 7.0 | 7.1 | 8.0 | 9.0 | 10.0 | 11.0 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Magic-number division | — | — | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `lea esp,[esp]` loop-alignment nops | — | — | — | — | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| SSE2 FPU by default | — | — | — | — | — | — | — | — | — | ✓ |
+| rep movs/stos inlining | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| /GS security cookie (default) | — | — | — | — | — | — | ✓ | ✓ | ✓ | ✓ |
+
+- **Integer division** — VC 2.0 and 4.x emit real `div`/`idiv` (`mov ecx,3; xor edx,edx; div ecx`).  VC 5.0+ replace constants with magic immediates: `x/3u` → `mov eax,0xAAAAAAAB; mul [esp+4]`, `x/10u` → `0xCCCCCCCD`, `x/100u` → `0x51EB851F`, signed `x/7` → `0x92492493`, `x/10` → `0x66666667`.  VC 5.0/6.0 take the product's high half directly (`mov eax,edx`); VC 7.0+ emit the post-shift (`shr edx,N`) first.
+- **Padding** — VC 2.0–6.0 pad with `90`, the 3-byte `8d 74 26 00` (`lea esi,[esi]`) and 7-byte `8d a4 24 00 00 00 00` nops; VC 7.0+ additionally emit `8d 64 24 00` (`lea esp,[esp]`) *inside* function bodies to align loop heads — a clean "VC 7.0+ codegen" marker even when the linker/CRT era says 6.0 (same independence as the constant-caching signal above).
+- **FPU** — VC 2.0–10.0 use x87 exclusively (`fld qword [esp+4]` = `dd 44 24 04`); FP constants load from `.rdata` via `fmul dword ptr [const]`, not `fld1`/`fldz`.  VC 11.0 (VS2012) defaults x86 to SSE2 (`addsd`/`mulsd`/`divsd` = `f2 0f 58/59/5e`).
+- **String ops** — all versions inline memset/memcpy-shaped loops as `rep stosd` (`f3 ab`) / `rep movsd` (`f3 a5`); GCC and Borland bcc32 do not rep-stos the same source.
+- **Stack probes** — frames > 4 KB: `mov eax,<size>; call __chkstk` (32-bit) / `mov ax,<size>; call __aNchkstk` (16-bit); MinGW instead calls `___chkstk_ms`.
+- **Frame pointer** — omitted at `/O1`/`/O2` (args at `[esp+4]`); `push ebp; mov ebp,esp` (`55 8b ec`) means `/Od` or `/Oy-`.
+- **/GS** — VC 8.0+ default-instruments buffer functions with `__security_cookie` / `__security_check_cookie` (the symbols survive in unstripped binaries and objects).
+- **16-bit line** — VC 1.x always frames with `push bp; mov bp,sp`, ends with `leave` (`c9`), divides via `mov bx,N; div bx`, and intersperses `fwait` (`9b`) in FPU code.
 - **Detect It Easy** — `diec` carries per-version MSVC signatures and is the quickest first pass.
 
 A common trap: the compiler and the CRT/linker eras are independent fingerprints, so a binary can show a VC 6.0-era CRT while containing 4.x/5.0-compiled translation units (mixed-version builds are real — see [Projects](#projects)).
