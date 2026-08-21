@@ -29,6 +29,10 @@ Borland C++ 4.5/5.0 floppies also exist but are not commonly used for matching �
 ## Identifying a Borland compiled binary
 
 - **Detect It Easy** reports Turbo C 2.0 builds as "Borland C/C++ 1991".
+- **Codegen fingerprints** — verified by compiling a probe through TCC 3.1 (`-O1`) and bcc32 5.5 (`-O1`):
+  - **Frame pointer always** — every function starts `push ebp; mov ebp,esp` (`55 8b ec`) even at `-O1` (bcc32 probe: 18 frame prologues).  MSVC `/O2` and Watcom omit it — this is the Borland signature.
+  - **Real division** — bcc32 emits `mov ecx,3; xor edx,edx; div ecx` for `x/3u`/`x/7u` — no magic-constant multiply.  Its magic set differs from MSVC's too: `0xCCCCCCCD` for `x/10u`, but real `div` for other small divisors.
+  - **16-bit line (TCC)** — `push bp; mov bp,sp` framing, `mov bx,N; div bx` (divisor in BX), `fwait` (`9b`) before each x87 op, and `pop bp; ret` epilogues — never `leave` (contrast MSVC 1.5x, which ends functions with `leave`).
 - **16-bit NE executables** — Borland segments carry a `[index\x00][name-string][content]` marker at the start of each code segment, and the NE signature sits at `e_lfanew` = 0x40 — versus MSVC's 16-bit linker, which places the NE header at 0x400 and starts segments with code. This cleanly separates Borland from MSVC 16-bit output.
 - **Delphi / Pascal string evidence** — Borland RTL strings (length-prefixed Pascal strings) appear in data segments.
 - **OMF objects** — Borland's dialect of 16-bit OMF; the compiler version can be extracted from object files (e.g. via `objconv`'s comp.id).

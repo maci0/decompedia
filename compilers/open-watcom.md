@@ -29,6 +29,13 @@ The compilers emit **OMF** objects: 32-bit OMF is converted to COFF (via `objcon
 - **Object format** — Watcom objects are OMF in a dialect distinct from Borland's; `objconv`'s comp.id extracts the compiler version from the object.
 - **Detect It Easy** carries Watcom signatures.
 - **Runtime** — the DOS-extender-based 16-bit output and the win32 output have distinct CRT signatures (Watcom's own runtime, not msvcrt).
+- **Codegen fingerprints** — verified by compiling a probe with `wcc386 -otexan`:
+  - **Saves caller-saved registers** — prologues save whatever the body clobbers, including `push ecx; push edx` (`51 52`) and `push ebx` (`53`) — MSVC never saves ECX/EDX (caller-saved in its ABI), so this is a strong Watcom marker.
+  - **`ret N` callee cleanup** — FP-argument functions end `ret 4` / `ret 8` (`c2 04 00`): the callee cleans the stack (Watcom's own convention), where MSVC cdecl leaves cleanup to the caller.
+  - **No frame pointer** — leaf functions skip `push ebp` entirely.
+  - **Real division** — `div`/`idiv` even at `-otexan`: `push ecx; push edx; mov ecx,3; xor edx,edx; div ecx; pop edx; pop ecx`.
+  - **`__CHK` stack probe** — `push <amount>; call __CHK` (the `__CHK` symbol appears in OMF), distinct from MSVC's `__chkstk` (size in EAX) and MinGW's `___chkstk_ms`.
+  - **ALIGN 8** between functions.
 
 ## Known quirks
 
